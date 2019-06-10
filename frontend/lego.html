@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Lego Project</title>
+
+    <!-- styles -->
+    <link href="https://getbootstrap.com/docs/3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://getbootstrap.com/docs/3.3/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+    <script src="https://www.gstatic.com/charts/loader.js" type="text/javascript"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style type="text/css">
+      img{
+        max-width: 100px;
+        max-height: 100px;
+      }
+      .fa{
+        margin-right: 5px;
+      }
+      .fa-close{
+        margin-right: 0;
+      }
+    </style>
+    
+  </head>
+
+  <body>
+
+    <div class="container-fluid">
+      <div class="header clearfix">
+        <nav>
+          <ul class="nav nav-pills pull-right">
+            <li><a target="_blank" href="https://console.cloud.google.com/datastore/entities?project=legotracker">Datastore</a></li>
+            <li><a target="_blank" href="https://console.cloud.google.com/functions/details/europe-west1/history?project=legotracker">Cloud Functions</a></li>
+            <li><a target="_blank" href="https://googleapis.github.io/google-cloud-python/latest/datastore/index.html#api-reference">API Docs</a></li>
+          </ul>
+        </nav>
+        <h3 class="text-muted">Lego Project</h3>
+      </div>
+
+      <div clas="row">
+        <div class="col-md-2">
+          <div id="search_terms" class="list-group">
+            <span class="list-group-item default">
+              <div class="input-group">
+                <input id="new_search_term" type="text" class="form-control" placeholder="New search term" />
+                <span class="input-group-btn"><button id="add_new_search_term" type="button" class="btn btn-default">Add</button></span>
+              </div>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <span>Listings</span>
+              <button type="button" class="btn btn-default btn-xs pull-right"><i class="fa fa-refresh"></i>Refresh Scrape</button>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Description</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody id="listings"></tbody>            
+            </table>
+          </div>          
+        </div>
+        <div class="col-md-7">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <span>Pricing</span>
+              <button id="refresh_stats" type="button" class="btn btn-default btn-xs pull-right"><i class="fa fa-refresh"></i>Refresh</button>
+            </div>
+            <div class="panel-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <div id="scatter_chart_div" style="width: 100%; height: 300px; opacity: 0.8"></div>
+                </div>
+                <div class="col-md-4">
+                  <div id="candlestick_chart_div" style="width: 100%; height: 300px; opacity: 0.8"></div>
+                </div>
+              </div>              
+            </div>
+            <table class="table">
+              <tbody id="stats_table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- scripts -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://getbootstrap.com/docs/3.3/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+
+      var search_terms = null;
+      var search_term = null;
+      var listings = [];
+      var scatter_chart_data = [
+        ['Year', 'Price', {type: 'string', role: 'tooltip'}],
+        [new Date(2000, 8, 1),  1000, 'test'],
+        [new Date(2000, 8, 3),  660, 'test'],
+        [new Date(2000, 8, 4),  1030, 'test'],
+        [new Date(2000, 8, 2),  1170, 'test'],
+      ];
+      var candlestick_chart_data = [
+        ['Price', 20, 28, 38, 45]
+      ]
+      google.charts.load('current', {'packages':['corechart']});
+          
+      function render_line_chart(){
+        google.charts.setOnLoadCallback(function(){          
+          var data = google.visualization.arrayToDataTable(scatter_chart_data);
+          var options = {
+            legend: { position: 'none' },
+            chartArea: {'width': '80%', 'height': '80%'},
+            hAxis:{
+              //format: 'MMM y',
+              gridlines: {color: "#CCCCCC"},
+              baselineColor: '#CCCCCC'
+            },
+            vAxis:{
+              gridlines: {color: "#CCCCCC"},
+              baselineColor: '#CCCCCC'
+            },
+            tooltip: {isHtml: true},
+            pointSize: 10,
+            trendlines: { 0: {
+              lineWidth: 100,
+              opacity: 0.2,
+              pointSize: 20,
+              pointsVisible: false,
+              tooltip: false
+            } }
+          };
+          var chart = new google.visualization.ScatterChart(document.getElementById('scatter_chart_div'));
+          chart.draw(data, options);
+          google.visualization.events.addListener(chart, 'select', function() {
+            var row = chart.getSelection()[0].row;
+            var tr = document.getElementById(listings[row].id);
+            tr.classList.add("success");
+            tr.scrollIntoView();
+          });
+        });
+      }
+
+      function render_candlestick_chart(){
+        google.charts.setOnLoadCallback(function(){
+          var data = google.visualization.arrayToDataTable(candlestick_chart_data, true);
+          var options = {
+            legend:'none',
+            chartArea: {'width': '70%', 'height': '80%'},
+            //orientation: 'vertical',
+            hAxis:{
+              gridlines: {color: "#CCCCCC"},
+              baselineColor: '#CCCCCC'
+            },
+            vAxis:{
+              gridlines: {color: "#CCCCCC"},
+              baselineColor: '#CCCCCC'
+            },
+          };
+          var chart = new google.visualization.CandlestickChart(document.getElementById('candlestick_chart_div'));
+          chart.draw(data, options);
+        });
+      }
+
+      $(document).ready(function() {
+        // get search_terms
+        $.getJSON("https://europe-west1-legotracker.cloudfunctions.net/api-get-search-terms", function(data) {
+          search_terms = data;
+          $(data).each(function() {
+            var html = `
+              <a href="#" class="list-group-item text-center">
+              <img src="https://sh-s7-live-s.legocdn.com/is/image/LEGO/lego_id" style="opacity: 0.8">
+              <h4>search_term</h4>
+              </a>
+            `;
+            $("#search_terms").append(
+              html
+                .replace('search_term', $(this)[0].id)
+                .replace('lego_id', $(this)[0].id.split(' ')[1])
+            );
+          });          
+        });
+
+        // load search terms
+        $("#search_terms").on("click", "a", function(){
+          search_term = search_terms.filter(x => x.id == $(this).find('h4').text())[0];
+          var html = `
+            <tr id="listing_id" data-listing-id="listing_id" data-search-term="search_term">
+              <td><img class="media-object" src="listing_image"></td>
+              <td>
+                <b><a href="https://www.ebay.co.uk/itm/listing_id" target="_blank">listing_description</a></b>
+                <span class="text-muted"><br />Listing: listing_id</span>
+                <span class="text-muted"><br />Ended: listing_auction_ends</span>
+                <span class="text-muted"><br />Price: <b>£listing_total_price</b></span>
+              </td>
+              <td><button type="button" class="btn btn-danger"><i class="fa fa-close fa-2x"></i></button></td>
+            </tr>
+          `;
+          var tooltip_html = `
+            <center><img style="padding: 5px;" src="listing_image" /></center>
+            <h4 style="width: 200px; padding: 10px; text-align: center">£listing_price<br><br>listing_description</h4>
+          `;
+          $.getJSON("https://europe-west1-legotracker.cloudfunctions.net/api-get-listings?search_term=" + search_term.id, function(data) {
+              listings = data;
+              scatter_chart_data = [['Date', 'Price', {type: 'string', role: 'tooltip', 'p': {'html': true}}]];
+              candlestick_chart_data = [[
+                'Price',
+                search_term.percentiles['0'],
+                search_term.percentiles['25'],
+                search_term.percentiles['75'],
+                search_term.percentiles['100'],
+              ]]
+              $("#stats_table").html('');
+              if (search_term.percentiles['25']){
+                $("#stats_table").append(`
+                    <tr>
+                      <td>Most prices are between £x_1 and £x_2, leaving a gap of <b>£x_3</b></td>
+                    </tr>
+                  `
+                  .replace('x_1', search_term.percentiles['25'].toFixed(2))
+                  .replace('x_2', search_term.percentiles['75'].toFixed(2))
+                  .replace('x_3', search_term['25_75_gap'].toFixed(2))
+                );
+                $("#stats_table").append(`
+                    <tr>
+                      <td>Average price is £x_1, accross x_2 listings</td>
+                    </tr>
+                  `
+                  .replace('x_1', search_term.average.toFixed(2))
+                  .replace('x_2', search_term.listings)
+                );
+              }
+
+              $("#listings").html('');
+              $(data).each(function() {
+                listing = $(this)[0];
+                scatter_chart_data.push([
+                  new Date(listing.auction_ends_formatted.year, listing.auction_ends_formatted.month-1, listing.auction_ends_formatted.day), 
+                  listing.total_price,
+                  tooltip_html
+                    .replace('listing_image', listing.image)
+                    .replace('listing_description', listing.description)
+                    .replace('listing_price', listing.total_price.toFixed(2))
+                ])                
+                $("#listings").append(
+                    html
+                      .replace('search_term', search_term.id)
+                      .replace('listing_id', listing.id)
+                      .replace('listing_id', listing.id)
+                      .replace('listing_id', listing.id)
+                      .replace('listing_id', listing.id)
+                      .replace('listing_description', listing.description)
+                      .replace('listing_image', listing.image)
+                      .replace('listing_total_price', listing.total_price.toFixed(2))
+                      .replace('listing_auction_ends', listing.auction_ends)
+                  );
+              });
+              render_line_chart();
+              render_candlestick_chart();
+            });
+        });
+
+        function hit_page(url){          
+          $(".container-fluid").html('<div class="page-header text-center"><h1><i class="fa fa-refresh fa-spin"></i>Loading</h1></div>');
+          $.get(url, function(data) {    
+            console.log(data);        
+            location.reload(true);
+          });
+        }
+
+        // add_new_search_term
+        $("#add_new_search_term").on("click", function(){
+          hit_page("https://europe-west1-legotracker.cloudfunctions.net/history?search_term=" + $("#new_search_term").val());
+        });
+
+        // hide listing
+        $("#listings").on("click", ".btn-danger", function(){
+          var listing = $(this).closest('tr');
+          listing.hide();
+          $.get('https://europe-west1-legotracker.cloudfunctions.net/api-hide-listing?listing_id=' + listing.data('listing-id') + '&search_term=' + listing.data('search-term'));
+        });
+
+        // hide listing
+        $("#refresh_stats").on("click", function(){
+          hit_page("https://us-central1-legotracker.cloudfunctions.net/api-update-search-term-stats?search_term=" + search_term.id);
+        });        
+
+      });
+    </script>
+
+  </body>
+</html>
