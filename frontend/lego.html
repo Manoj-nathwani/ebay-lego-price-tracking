@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -95,7 +93,7 @@
                 </div>
               </div>              
             </div>
-            <table class="table">
+            <table class="table" style="font-size: 1.3em;">
               <tbody id="stats_table"></tbody>
             </table>
           </div>
@@ -208,7 +206,7 @@
               <td><img class="media-object" src="listing_image"></td>
               <td>
                 <b><a href="https://www.ebay.co.uk/itm/listing_id" target="_blank">listing_description</a></b>
-                <span class="text-muted"><br />Listing: listing_id</span>
+                <span class="text-muted"><br />ID: listing_id</span>
                 <span class="text-muted"><br />Ended: listing_auction_ends</span>
                 <span class="text-muted"><br />Price: <b>£listing_total_price</b></span>
               </td>
@@ -271,7 +269,7 @@
                       .replace('listing_description', listing.description)
                       .replace('listing_image', listing.image)
                       .replace('listing_total_price', listing.total_price.toFixed(2))
-                      .replace('listing_auction_ends', listing.auction_ends)
+                      .replace('listing_auction_ends', listing.auction_ends.split(',')[0])
                   );
               });
               render_line_chart();
