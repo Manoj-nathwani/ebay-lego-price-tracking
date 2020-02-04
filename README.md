@@ -2,6 +2,8 @@
 
 A side project that scraped completed eBay UK sales for Lego sets, stored them in Google Cloud Datastore, and plotted price history in a one-page dashboard.
 
+Write-up: [Playing the Lego stock market on eBay](https://manoj.ninja/articles/2020/02/04/playing-the-lego-stock-market-on-ebay)
+
 I built it to spot mispriced sets before everyone else. I stopped when the numbers made it obvious: sold Lego on eBay already behaves like a real-time stock market. The scrapers are left as-is and will not work against today's eBay HTML. Python 3.7 is retired too.
 
 ## What it looked like
