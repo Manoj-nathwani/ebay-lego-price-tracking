@@ -63,7 +63,7 @@
           <div class="panel panel-default">
             <div class="panel-heading">
               <span>Listings</span>
-              <button type="button" class="btn btn-default btn-xs pull-right"><i class="fa fa-refresh"></i>Refresh Scrape</button>
+              <button id="refresh_scrape" type="button" class="btn btn-default btn-xs pull-right"><i class="fa fa-refresh"></i>Refresh Scrape</button>
             </div>
             <table class="table">
               <thead>
@@ -290,6 +290,11 @@
           hit_page("https://europe-west1-legotracker.cloudfunctions.net/history?search_term=" + $("#new_search_term").val());
         });
 
+        // refresh scrape
+        $("#refresh_scrape").on("click", function(){
+          hit_page("https://europe-west1-legotracker.cloudfunctions.net/history?search_term=" + search_term.id);
+        });
+
         // hide listing
         $("#listings").on("click", ".btn-danger", function(){
           var listing = $(this).closest('tr');
@@ -297,7 +302,7 @@
           $.get('https://europe-west1-legotracker.cloudfunctions.net/api-hide-listing?listing_id=' + listing.data('listing-id') + '&search_term=' + listing.data('search-term'));
         });
 
-        // hide listing
+        // refresh stats
         $("#refresh_stats").on("click", function(){
           hit_page("https://us-central1-legotracker.cloudfunctions.net/api-update-search-term-stats?search_term=" + search_term.id);
         });        
